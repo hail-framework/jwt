@@ -1,0 +1,34 @@
+{
+  "name": "hail/jwt",
+  "description": "JWT builder/parser",
+  "type": "library",
+  "keywords": ["hail", "framework", "JWT", "JWS", "JWK", "Jose"],
+  "homepage": "http://framework.flyinghail.com/",
+  "support": {
+    "issues": "https://github.com/hail-framework/jwt/issues",
+    "source": "https://github.com/hail-framework/jwt"
+  },
+  "authors": [
+    {
+      "name": "FENG Hao",
+      "email": "flyinghail@msn.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Hail\\Jwt\\": "src/"
+    }
+  },
+  "license": "MIT",
+  "require": {
+    "php": ">=7.1.3",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-openssl": "*",
+    "hail/singleton": "^1.0.0"
+  },
+  "suggest": {
+    "ext-gmp": "Speed up calculations for RSA-PSS signature",
+    "ext-sodium": "Requried for EdDSA signature"
+  }
+}
