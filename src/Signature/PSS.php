@@ -64,7 +64,7 @@ class PSS extends RSA
     {
         $emLen = ($emBits + 1) >> 3;
         $sLen = RSAUtil::getHashLength($hash);
-        $mHash = hash($hash, $m, true);
+        $mHash = \hash($hash, $m, true);
         if ($emLen < $sLen * 2 + 2) {
             throw new \InvalidArgumentException('Invalid EMBits');
         }

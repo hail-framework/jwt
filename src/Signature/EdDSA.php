@@ -83,7 +83,7 @@ class EdDSA implements SignatureInterface
             $x = $this->getPublicKey($key);
         } elseif ($length === 32) {
             $d = $key;
-            $secretKey = $this->getPrivateKey($key);
+            $secretKey = $this->getPrivateKey($key, '');
             $x = \mb_substr($secretKey, 32, null, '8bit');
         } else {
             throw new \InvalidArgumentException('Invalid Ed25519 Key');

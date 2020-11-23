@@ -84,7 +84,7 @@ class RSA
 
     public static function convertOctetStringToInteger(string $x): BigInteger
     {
-        $data = bin2hex($x);
+        $data = \bin2hex($x);
 
         return BigInteger::fromBase($data, 16);
     }
