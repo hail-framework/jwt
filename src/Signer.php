@@ -2,9 +2,7 @@
 
 namespace Hail\Jwt;
 
-use Hail\Jwt\Signature\{
-    EdDSA, HMAC, RSA, ECDSA, PSS
-};
+use Hail\Jwt\Signature\{EdDSA, HMAC, RSA, ECDSA, PSS};
 
 final class Signer
 {
@@ -24,48 +22,10 @@ final class Signer
         PS384 = 'PS384',
         PS512 = 'PS512';
 
-    private const METHOD = [
-        self::EdDSA => EdDSA::class,
-        self::HS256 => HMAC::class,
-        self::HS384 => HMAC::class,
-        self::HS512 => HMAC::class,
-        self::RS256 => RSA::class,
-        self::RS384 => RSA::class,
-        self::RS512 => RSA::class,
-        self::ES256 => ECDSA::class,
-        self::ES384 => ECDSA::class,
-        self::ES512 => ECDSA::class,
-        self::ES256K => ECDSA::class,
-        self::PS256 => PSS::class,
-        self::PS384 => PSS::class,
-        self::PS512 => PSS::class,
-    ];
-
-    private const HASH = [
-        self::HS256 => 'sha256',
-        self::HS384 => 'sha384',
-        self::HS512 => 'sha512',
-        self::RS256 => 'sha256',
-        self::RS384 => 'sha384',
-        self::RS512 => 'sha512',
-        self::ES256 => 'sha256',
-        self::ES384 => 'sha384',
-        self::ES512 => 'sha512',
-        self::ES256K => 'sha256',
-        self::PS256 => 'sha256',
-        self::PS384 => 'sha384',
-        self::PS512 => 'sha512',
-    ];
-
     /**
      * @var string
      */
     private $algorithm;
-
-    /**
-     * @var string
-     */
-    private $method;
 
     /**
      * @var string|null
@@ -82,19 +42,22 @@ final class Signer
      */
     private $passphrase = '';
 
+    /**
+     * @var SignatureInterface
+     */
+    private $signature;
+
     public function __construct(string $algorithm, ?string $key, string $passphrase = '')
     {
         $this->algorithm = self::supported($algorithm);
-
-        $this->method = self::METHOD[$algorithm];
-        $this->hash = self::HASH[$algorithm] ?? null;
+        $this->signature = $this->getSignature($algorithm);
 
         if ($key !== null) {
             $this->setKey($key, $passphrase);
         }
     }
 
-    public function setKey(string $key, string $passphrase = '')
+    public function setKey(string $key, string $passphrase = ''): void
     {
         $this->key = $key;
         $this->passphrase = $passphrase;
@@ -106,16 +69,12 @@ final class Signer
             throw new \LogicException('Key not set');
         }
 
-        if ($this->method === HMAC::class) {
-            return \hex2bin($this->key);
-        }
-
         if ($type === 'sign') {
-            return $this->method::getPrivateKey($this->key, $this->passphrase);
+            return $this->signature->getPrivateKey($this->key, $this->passphrase);
         }
 
         if ($type === 'verify') {
-            return $this->method::getPublicKey($this->key);
+            return $this->signature->getPublicKey($this->key);
         }
 
         throw new \LogicException('unknown method');
@@ -123,12 +82,8 @@ final class Signer
 
     public static function supported($algorithm)
     {
-        if (!isset(self::METHOD[$algorithm])) {
+        if (!\defined(self::class . '::' . $algorithm)) {
             throw new \UnexpectedValueException('Signature algorithm not supported');
-        }
-
-        if ($algorithm === self::EdDSA && !EdDSA::available()) {
-            throw new \UnexpectedValueException('You must install "ext-sodium" to support EdDSA.');
         }
 
         return $algorithm;
@@ -141,11 +96,44 @@ final class Signer
 
     public function sign(string $payload): string
     {
-        return $this->method::sign($payload, $this->getKey(__FUNCTION__), $this->hash);
+        return $this->signature->sign($payload, $this->getKey(__FUNCTION__), $this->hash);
     }
 
     public function verify(string $signature, string $payload): bool
     {
-        return $this->method::verify($signature, $payload, $this->getKey(__FUNCTION__), $this->hash);
+        return $this->signature->verify($signature, $payload, $this->getKey(__FUNCTION__), $this->hash);
+    }
+
+    private function getSignature($algorithm)
+    {
+        $this->hash = 'sha' . \substr($algorithm, 2, 3);
+
+        switch(\substr($algorithm, 0, 2)) {
+            case 'HS':
+                return HMAC::getInstance();
+
+            case 'RS':
+                return RSA::getInstance();
+
+            case 'ES':
+                return ECDSA::getInstance();
+
+            case 'PS':
+                return PSS::getInstance();
+
+            default:
+                $this->hash = null;
+
+                if ($algorithm === self::EdDSA) {
+                    $instance = EdDSA::getInstance();
+                    if (!$instance->available()) {
+                        throw new \UnexpectedValueException('You must install "ext-sodium" to support EdDSA.');
+                    }
+
+                    return $instance;
+                }
+        }
+
+        throw new \UnexpectedValueException('Signature algorithm not supported');
     }
 }

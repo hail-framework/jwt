@@ -6,7 +6,7 @@ use Hail\Jwt\Util\RSA as RSAUtil;
 
 class PSS extends RSA
 {
-    public static function sign(string $payload, $key, string $hash): string
+    public function sign(string $payload, $key, string $hash): string
     {
         if (!\is_resource($key)) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
@@ -40,7 +40,7 @@ class PSS extends RSA
         return $maskedDB . $h . \chr(0xBC);
     }
 
-    public static function verify(string $signature, string $payload, $key, string $hash): bool
+    public function verify(string $signature, string $payload, $key, string $hash): bool
     {
         if (!\is_resource($key)) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
@@ -57,10 +57,10 @@ class PSS extends RSA
         $em = RSAUtil::convertIntegerToOctetString($m2, $modulusLen);
         $modBits = 8 * $modulusLen;
 
-        return self::verifyEMSAPSS($payload, $em, $modBits - 1, $hash);
+        return $this->verifyEMSAPSS($payload, $em, $modBits - 1, $hash);
     }
 
-    private static function verifyEMSAPSS(string $m, string $em, int $emBits, string $hash): bool
+    private function verifyEMSAPSS(string $m, string $em, int $emBits, string $hash): bool
     {
         $emLen = ($emBits + 1) >> 3;
         $sLen = RSAUtil::getHashLength($hash);

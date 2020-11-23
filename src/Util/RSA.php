@@ -36,7 +36,7 @@ class RSA
      * Operation with primes 'p' and 'q' is appox. 2x faster.
      *
      * @param array $key
-     * @param BigInteger  $c
+     * @param BigInteger $c
      *
      * @return BigInteger
      */

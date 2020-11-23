@@ -2,25 +2,44 @@
 
 namespace Hail\Jwt\Signature;
 
+use Hail\Jwt\SignatureInterface;
 use Hail\Jwt\Util\Base64Url;
+use Hail\Singleton\SingletonTrait;
 
-final class HMAC
+final class HMAC implements SignatureInterface
 {
-    public static function sign(string $payload, string $key, string $hash): string
+    use SingletonTrait;
+
+    public function available(): bool
+    {
+        return true;
+    }
+
+    public function sign(string $payload, $key, string $hash): string
     {
         return \hash_hmac($hash, $payload, $key, true);
     }
 
-    public static function verify(string $signature, string $payload, string $key, string $hash): bool
+    public function verify(string $signature, string $payload, $key, string $hash): bool
     {
-        return \hash_equals($signature, self::sign($payload, $key, $hash));
+        return \hash_equals($signature, $this->sign($payload, $key, $hash));
     }
 
-    public static function getJWK(string $key): array
+    public function getJWK($key): array
     {
         return [
             'kty' => 'oct',
             'k' => Base64Url::encode($key),
         ];
+    }
+
+    public function getPrivateKey(string $content, string $passphrase)
+    {
+        return \hex2bin($content);
+    }
+
+    public function getPublicKey(string $content)
+    {
+        return \hex2bin($content);
     }
 }

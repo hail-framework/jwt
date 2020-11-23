@@ -136,7 +136,7 @@ class JWTParser
         return $this->time ?? new \DateTimeImmutable('now', new \DateTimeZone(\date_default_timezone_get()));
     }
 
-    public function validAudience(string $audience)
+    public function validAudience(string $audience): JWTParser
     {
         $audiences = $this->validation[RegisteredClaims::AUDIENCE] ?? [];
 
@@ -149,21 +149,21 @@ class JWTParser
         return $this;
     }
 
-    public function validIdentifier(string $id)
+    public function validIdentifier(string $id): JWTParser
     {
         $this->validation[RegisteredClaims::ID] = $id;
 
         return $this;
     }
 
-    public function validIssuer(string $id)
+    public function validIssuer(string $id): JWTParser
     {
         $this->validation[RegisteredClaims::ISSUER] = $id;
 
         return $this;
     }
 
-    public function validSubject(string $subject)
+    public function validSubject(string $subject): JWTParser
     {
         $this->validation[RegisteredClaims::SUBJECT] = $subject;
 

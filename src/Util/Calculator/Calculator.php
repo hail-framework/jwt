@@ -20,27 +20,30 @@ abstract class Calculator
 
     public static function detect(): Calculator
     {
-        switch (true) {
-            case GMP_EXTENSION:
-                return GmpCalculator::getInstance();
+        if (!isset(static::$instance[self::class])) {
+            if (GMP_EXTENSION) {
+                $instance = GmpCalculator::getInstance();
+            } elseif (BCMATH_EXTENSION) {
+                $instance = BcMathCalculator::getInstance();
+            } else {
+                $instance = NativeCalculator::getInstance();
+            }
 
-            case BCMATH_EXTENSION:
-                return BcMathCalculator::getInstance();
-
-            default:
-                return NativeCalculator::getInstance();
+            static::$instance[self::class] = $instance;
         }
+
+        return static::$instance[self::class];
     }
 
     /**
      * Converts a number from an arbitrary base.
      *
      * @param string $number The number, positive or zero, non-empty, case-insensitively validated for the given base.
-     * @param int    $base   The base of the number, validated from 2 to 36.
+     * @param int $base The base of the number, validated from 2 to 36.
      *
      * @return string The converted number, following the Calculator conventions.
      */
-    public function fromBase(string $number, int $base) : string
+    public function fromBase(string $number, int $base): string
     {
         $alphabet = self::ALPHABET;
 
@@ -65,12 +68,12 @@ abstract class Calculator
             if ($index !== 0) {
                 $result = $this->add($result, ($index === 1)
                     ? $power
-                    : $this->mul($power, (string) $index)
+                    : $this->mul($power, (string)$index)
                 );
             }
 
             if ($i !== 0) {
-                $power = $this->mul($power, (string) $base);
+                $power = $this->mul($power, (string)$base);
             }
         }
 
@@ -81,11 +84,11 @@ abstract class Calculator
      * Converts a number to an arbitrary base.
      *
      * @param string $number The number to convert, following the Calculator conventions.
-     * @param int    $base   The base to convert to, validated from 2 to 36.
+     * @param int $base The base to convert to, validated from 2 to 36.
      *
      * @return string The converted number, lowercase.
      */
-    public function toBase(string $number, int $base) : string
+    public function toBase(string $number, int $base): string
     {
         $negative = ($number[0] === '-');
 
@@ -99,12 +102,12 @@ abstract class Calculator
             $number = $alphabet[0];
         } else {
 
-            $baseStr = (string) $base;
+            $baseStr = (string)$base;
             $result = '';
 
             while ($number !== '0') {
                 [$number, $remainder] = $this->divQR($number, $baseStr);
-                $remainder = (int) $remainder;
+                $remainder = (int)$remainder;
 
                 $result .= $alphabet[$remainder];
             }
@@ -127,15 +130,15 @@ abstract class Calculator
      *
      * @return int [-1, 0, 1] If the first number is less than, equal to, or greater than the second number.
      */
-    public function cmp(string $a, string $b) : int
+    public function cmp(string $a, string $b): int
     {
         [$aNeg, $bNeg, $aDig, $bDig] = $this->extract($a, $b);
 
-        if ($aNeg && ! $bNeg) {
+        if ($aNeg && !$bNeg) {
             return -1;
         }
 
-        if ($bNeg && ! $aNeg) {
+        if ($bNeg && !$aNeg) {
             return 1;
         }
 
@@ -161,7 +164,7 @@ abstract class Calculator
      *
      * @return array{0: bool, 1: bool, 2: string, 3: string} Whether $a and $b are negative, followed by their digits.
      */
-    protected function extract(string $a, string $b) : array
+    protected function extract(string $a, string $b): array
     {
         return [
             $aNeg = ($a[0] === '-'),
@@ -179,7 +182,7 @@ abstract class Calculator
      *
      * @return string The negated value.
      */
-    public function neg(string $n) : string
+    public function neg(string $n): string
     {
         if ($n === '0') {
             return '0';
@@ -200,7 +203,7 @@ abstract class Calculator
      *
      * @return string The sum.
      */
-    abstract public function add(string $a, string $b) : string;
+    abstract public function add(string $a, string $b): string;
 
     /**
      * Subtracts two numbers.
@@ -210,7 +213,7 @@ abstract class Calculator
      *
      * @return string The difference.
      */
-    abstract public function sub(string $a, string $b) : string;
+    abstract public function sub(string $a, string $b): string;
 
     /**
      * Multiplies two numbers.
@@ -220,7 +223,7 @@ abstract class Calculator
      *
      * @return string The product.
      */
-    abstract public function mul(string $a, string $b) : string;
+    abstract public function mul(string $a, string $b): string;
 
     /**
      * @param string $a
@@ -228,19 +231,22 @@ abstract class Calculator
      *
      * @return string
      */
-    abstract public function mod(string $a, string $b) : string;
+    public function mod(string $a, string $b) : string
+    {
+        return $this->divR($this->add($this->divR($a, $b), $b), $b);
+    }
 
     /**
      * Raises a number into power with modulo.
      * Algorithm from: https://www.geeksforgeeks.org/modular-exponentiation-power-in-modular-arithmetic/
      *
      * @param string $base The base number; must be positive or zero.
-     * @param string $exp  The exponent; must be positive or zero.
-     * @param string $mod  The modulus; must be strictly positive.
+     * @param string $exp The exponent; must be positive or zero.
+     * @param string $mod The modulus; must be strictly positive.
      *
      * @return string The power.
      */
-    abstract public function modPow(string $base, string $exp, string $mod) : string;
+    abstract public function modPow(string $base, string $exp, string $mod): string;
 
     /**
      * Returns the quotient of the division of two numbers.
@@ -250,7 +256,7 @@ abstract class Calculator
      *
      * @return string The quotient.
      */
-    abstract public function divQ(string $a, string $b) : string;
+    abstract public function divQ(string $a, string $b): string;
 
     /**
      * Returns the remainder of the division of two numbers.
@@ -270,5 +276,5 @@ abstract class Calculator
      *
      * @return string[] An array containing the quotient and remainder.
      */
-    abstract public function divQR(string $a, string $b) : array;
+    abstract public function divQR(string $a, string $b): array;
 }

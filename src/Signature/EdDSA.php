@@ -2,7 +2,9 @@
 
 namespace Hail\Jwt\Signature;
 
+use Hail\Jwt\SignatureInterface;
 use Hail\Jwt\Util\Base64Url;
+use Hail\Singleton\SingletonTrait;
 
 \defined('SODIUM_EXTENSION') || \define('SODIUM_EXTENSION', \extension_loaded('sodium'));
 
@@ -12,24 +14,26 @@ use Hail\Jwt\Util\Base64Url;
  *
  * @package Hail\Jwt\Signature
  */
-class EdDSA
+class EdDSA implements SignatureInterface
 {
-    public static function available(): bool
+    use SingletonTrait;
+
+    public function available(): bool
     {
         return SODIUM_EXTENSION;
     }
 
-    public static function sign(string $payload, $key): string
+    public function sign(string $payload, $key, string $hash): string
     {
         return \sodium_crypto_sign_detached($payload, $key);
     }
 
-    public static function verify(string $signature, string $payload, $key): bool
+    public function verify(string $signature, string $payload, $key, string $hash): bool
     {
         return \sodium_crypto_sign_verify_detached($signature, $payload, $key);
     }
 
-    public static function getPrivateKey(string $content)
+    public function getPrivateKey(string $content, string $passphrase)
     {
         $key = \hex2bin($content);
         $length = \mb_strlen($key, '8bit');
@@ -47,7 +51,7 @@ class EdDSA
         throw new \InvalidArgumentException('Invalid Ed25519 Key');
     }
 
-    public static function getPublicKey(string $content)
+    public function getPublicKey(string $content)
     {
         $key = \hex2bin($content);
         $length = \mb_strlen($key, '8bit');
@@ -69,17 +73,17 @@ class EdDSA
         throw new \InvalidArgumentException('Invalid Ed25519 Key');
     }
 
-    public static function getJWK($key): array
+    public function getJWK($key): array
     {
         $key = \hex2bin($key);
         $length = \mb_strlen($key, '8bit');
 
         if ($length === 64) {
             $d = \mb_substr($key, 0, 32, '8bit');
-            $x = self::getPublicKey($key);
+            $x = $this->getPublicKey($key);
         } elseif ($length === 32) {
             $d = $key;
-            $secretKey = self::getPrivateKey($key);
+            $secretKey = $this->getPrivateKey($key);
             $x = \mb_substr($secretKey, 32, null, '8bit');
         } else {
             throw new \InvalidArgumentException('Invalid Ed25519 Key');

@@ -108,11 +108,6 @@ class NativeCalculator extends Calculator
         return $result;
     }
 
-    public function mod(string $a, string $b) : string
-    {
-        return $this->divR($this->add($this->divR($a, $b), $b), $b);
-    }
-
     public function modPow(string $base, string $exp, string $mod) : string
     {
         // special case: the algorithm below fails with 0 power 0 mod 1 (returns 1 instead of 0)

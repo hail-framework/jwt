@@ -27,15 +27,15 @@ final class ECDSA extends RSA
         'secp256k1' => 'secp256k1'
     ];
 
-    public static function sign(string $payload, $key, string $hash): string
+    public function sign(string $payload, $key, string $hash): string
     {
-        return self::fromDER(
+        return $this->fromDER(
             parent::sign($payload, $key, $hash),
-            self::getHashLength($hash)
+            $this->getHashLength($hash)
         );
     }
 
-    public static function fromDER(string $der, int $partLength): string
+    private function fromDER(string $der, int $partLength): string
     {
         $hex = unpack('H*', $der)[1];
         if (0 !== mb_strpos($hex, '30', 0, '8bit')) { // SEQUENCE
@@ -53,7 +53,7 @@ final class ECDSA extends RSA
         }
 
         $Rl = \hexdec(\mb_substr($hex, 2, 2, '8bit'));
-        $R = self::retrievePositiveInteger(\mb_substr($hex, 4, $Rl * 2, '8bit'));
+        $R = $this->retrievePositiveInteger(\mb_substr($hex, 4, $Rl * 2, '8bit'));
         $R = \str_pad($R, $partLength, '0', STR_PAD_LEFT);
 
         $hex = \mb_substr($hex, 4 + $Rl * 2, null, '8bit');
@@ -62,7 +62,7 @@ final class ECDSA extends RSA
         }
 
         $Sl = \hexdec(\mb_substr($hex, 2, 2, '8bit'));
-        $S = self::retrievePositiveInteger(\mb_substr($hex, 4, $Sl * 2, '8bit'));
+        $S = $this->retrievePositiveInteger(\mb_substr($hex, 4, $Sl * 2, '8bit'));
         $S = \str_pad($S, $partLength, '0', STR_PAD_LEFT);
 
         return \pack('H*', $R . $S);
@@ -73,7 +73,7 @@ final class ECDSA extends RSA
      *
      * @return string
      */
-    private static function retrievePositiveInteger(string $data): string
+    private function retrievePositiveInteger(string $data): string
     {
         while (0 === \mb_strpos($data, '00', 0, '8bit') && \mb_substr($data, 2, 2, '8bit') > '7f') {
             $data = \mb_substr($data, 2, null, '8bit');
@@ -82,15 +82,15 @@ final class ECDSA extends RSA
         return $data;
     }
 
-    public static function verify(string $signature, string $payload, $key, string $hash): bool
+    public function verify(string $signature, string $payload, $key, string $hash): bool
     {
         return parent::verify(
-            self::toDER($signature, self::getHashLength($hash)),
+            $this->toDER($signature, $this->getHashLength($hash)),
             $payload, $key, $hash
         );
     }
 
-    public static function toDER(string $signature, int $partLength): string
+    private function toDER(string $signature, int $partLength): string
     {
         $signature = \unpack('H*', $signature)[1];
         if (\mb_strlen($signature, '8bit') !== 2 * $partLength) {
@@ -99,9 +99,9 @@ final class ECDSA extends RSA
         $R = \mb_substr($signature, 0, $partLength, '8bit');
         $S = \mb_substr($signature, $partLength, null, '8bit');
 
-        $R = self::preparePositiveInteger($R);
+        $R = $this->preparePositiveInteger($R);
         $Rl = \mb_strlen($R, '8bit') / 2;
-        $S = self::preparePositiveInteger($S);
+        $S = $this->preparePositiveInteger($S);
         $Sl = \mb_strlen($S, '8bit') / 2;
         $der = \pack('H*',
             '30' . ($Rl + $Sl + 4 > 128 ? '81' : '') . \dechex($Rl + $Sl + 4)
@@ -112,7 +112,7 @@ final class ECDSA extends RSA
         return $der;
     }
 
-    private static function preparePositiveInteger(string $data): string
+    private function preparePositiveInteger(string $data): string
     {
         if (\mb_substr($data, 0, 2, '8bit') > '7f') {
             return '00' . $data;
@@ -125,15 +125,15 @@ final class ECDSA extends RSA
         return $data;
     }
 
-    public static function getJWK($key): array
+    public function getJWK($key): array
     {
         $jwk = parent::getJWK($key);
-        $jwk['crv'] = self::getECKeyCurve($jwk['crv']);
+        $jwk['crv'] = $this->getECKeyCurve($jwk['crv']);
 
         return $jwk;
     }
 
-    private static function getHashLength(string $hash): int
+    private function getHashLength(string $hash): int
     {
         if (!isset(self::HASH_LENGTH[$hash])) {
             throw new \InvalidArgumentException('Unsupported Hash.');
@@ -142,7 +142,7 @@ final class ECDSA extends RSA
         return self::HASH_LENGTH[$hash];
     }
 
-    private static function getECKeyCurve(string $name): string
+    private function getECKeyCurve(string $name): string
     {
         if (!isset(self::CURVE[$name])) {
             throw new \InvalidArgumentException('Unsupported Curve Name.');

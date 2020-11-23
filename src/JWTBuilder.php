@@ -78,7 +78,7 @@ class JWTBuilder
         }
     }
 
-    public function setAlgorithm($alg)
+    public function setAlgorithm($alg): JWTBuilder
     {
         $this->headers['alg'] = Signer::supported($alg);
         $this->signer = null;
@@ -86,11 +86,13 @@ class JWTBuilder
         return $this;
     }
 
-    public function setKey(string $key, string $passphrase = '')
+    public function setKey(string $key, string $passphrase = ''): JWTBuilder
     {
         $this->key = $key;
         $this->passphrase = $passphrase;
         $this->signer = null;
+
+        return $this;
     }
 
     /**
@@ -105,7 +107,7 @@ class JWTBuilder
         return $this->signer;
     }
 
-    public function setAudience(string $audience)
+    public function setAudience(string $audience): JWTBuilder
     {
         $audiences = $this->claims[RegisteredClaims::AUDIENCE] ?? [];
 
@@ -118,49 +120,49 @@ class JWTBuilder
         return $this;
     }
 
-    public function setExpiresAt(\DateTimeInterface $expiration)
+    public function setExpiresAt(\DateTimeInterface $expiration): JWTBuilder
     {
         $this->claims[RegisteredClaims::EXPIRATION_TIME] = $this->convertDate($expiration);
 
         return $this;
     }
 
-    public function setIdentifier(string $id)
+    public function setIdentifier(string $id): JWTBuilder
     {
         $this->claims[RegisteredClaims::ID] = $id;
 
         return $this;
     }
 
-    public function setIssuedAt(\DateTimeInterface $issuedAt)
+    public function setIssuedAt(\DateTimeInterface $issuedAt): JWTBuilder
     {
         $this->claims[RegisteredClaims::ISSUED_AT] = $this->convertDate($issuedAt);
 
         return $this;
     }
 
-    public function setIssuer(string $issuer)
+    public function setIssuer(string $issuer): JWTBuilder
     {
         $this->claims[RegisteredClaims::ISSUER] = $issuer;
 
         return $this;
     }
 
-    public function setNotBefore(\DateTimeInterface $notBefore)
+    public function setNotBefore(\DateTimeInterface $notBefore): JWTBuilder
     {
         $this->claims[RegisteredClaims::NOT_BEFORE] = $this->convertDate($notBefore);
 
         return $this;
     }
 
-    public function setSubject(string $subject)
+    public function setSubject(string $subject): JWTBuilder
     {
         $this->claims[RegisteredClaims::SUBJECT] = $subject;
 
         return $this;
     }
 
-    public function setHeader(string $name, $value): self
+    public function setHeader(string $name, $value): JWTBuilder
     {
         if ($name === 'alg') {
             return $this->setAlgorithm($value);
@@ -171,7 +173,7 @@ class JWTBuilder
         return $this;
     }
 
-    public function setClaim(string $name, $value)
+    public function setClaim(string $name, $value): JWTBuilder
     {
         if (\in_array($name, RegisteredClaims::ALL, true)) {
             throw new \InvalidArgumentException('You should use the correct methods to set registered claims');
@@ -187,7 +189,7 @@ class JWTBuilder
         return $this->claims[$name] ?? null;
     }
 
-    public function build()
+    public function build(): string
     {
         if (
             isset($this->claims[RegisteredClaims::AUDIENCE][0]) &&
@@ -205,7 +207,7 @@ class JWTBuilder
         return $payload . '.' . Base64Url::encode($signature);
     }
 
-    protected function convertDate(\DateTimeInterface $date)
+    protected function convertDate(\DateTimeInterface $date): string
     {
         $seconds = $date->format('U');
         $microseconds = $date->format('u');

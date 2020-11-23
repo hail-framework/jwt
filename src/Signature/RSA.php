@@ -2,10 +2,14 @@
 
 namespace Hail\Jwt\Signature;
 
+use Hail\Jwt\SignatureInterface;
 use Hail\Jwt\Util\Base64Url;
+use Hail\Singleton\SingletonTrait;
 
-class RSA
+class RSA implements SignatureInterface
 {
+    use SingletonTrait;
+
     protected const KEY_TYPE = \OPENSSL_KEYTYPE_RSA;
 
     protected const JWT_KTY = 'rsa';
@@ -20,8 +24,12 @@ class RSA
         'iqmp' => 'qi',
     ];
 
+    public function available(): bool
+    {
+        return true;
+    }
 
-    public static function sign(string $payload, $key, string $hash): string
+    public function sign(string $payload, $key, string $hash): string
     {
         if (!\is_resource($key)) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
@@ -37,7 +45,7 @@ class RSA
         return $signature;
     }
 
-    public static function verify(string $signature, string $payload, $key, string $hash): bool
+    public function verify(string $signature, string $payload, $key, string $hash): bool
     {
         if (!\is_resource($key)) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
@@ -56,23 +64,23 @@ class RSA
         }
     }
 
-    public static function getPrivateKey(string $content, string $passphrase)
+    public function getPrivateKey(string $content, string $passphrase)
     {
         $key = \openssl_pkey_get_private($content, $passphrase);
-        static::validateKey($key);
+        $this->validateKey($key);
 
         return $key;
     }
 
-    public static function getPublicKey(string $content)
+    public function getPublicKey(string $content)
     {
         $key = \openssl_pkey_get_public($content);
-        static::validateKey($key);
+        $this->validateKey($key);
 
         return $key;
     }
 
-    protected static function validateKey($key)
+    protected function validateKey($key)
     {
         if (!\is_resource($key)) {
             throw new \InvalidArgumentException(
@@ -89,9 +97,9 @@ class RSA
         return $details;
     }
 
-    public static function getJWK($key): array
+    public function getJWK($key): array
     {
-        $details = static::validateKey($key);
+        $details = $this->validateKey($key);
 
         $jwk = [
             'kty' => \strtoupper(static::JWT_KTY),

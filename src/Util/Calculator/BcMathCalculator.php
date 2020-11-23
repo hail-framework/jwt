@@ -20,11 +20,6 @@ class BcMathCalculator extends Calculator
         return \bcmul($a, $b, 0);
     }
 
-    public function mod(string $a, string $b) : string
-    {
-        return self::divR(self::add(self::divR($a, $b), $b), $b);
-    }
-
     public function modPow(string $base, string $exp, string $mod) : string
     {
         return \bcpowmod($base, $exp, $mod, 0);
