@@ -37,7 +37,7 @@ final class ECDSA extends RSA
 
     private function fromDER(string $der, int $partLength): string
     {
-        $hex = unpack('H*', $der)[1];
+        $hex = \bin2hex($der);
         if (0 !== mb_strpos($hex, '30', 0, '8bit')) { // SEQUENCE
             throw new \InvalidArgumentException('Invalid ASN.1 SEQUENCE');
         }
@@ -65,7 +65,7 @@ final class ECDSA extends RSA
         $S = $this->retrievePositiveInteger(\mb_substr($hex, 4, $Sl * 2, '8bit'));
         $S = \str_pad($S, $partLength, '0', STR_PAD_LEFT);
 
-        return \pack('H*', $R . $S);
+        return \hex2bin($R . $S);
     }
 
     /**
@@ -92,7 +92,7 @@ final class ECDSA extends RSA
 
     private function toDER(string $signature, int $partLength): string
     {
-        $signature = \unpack('H*', $signature)[1];
+        $signature = \bin2hex($signature);
         if (\mb_strlen($signature, '8bit') !== 2 * $partLength) {
             throw new \InvalidArgumentException('Invalid length.');
         }
@@ -103,13 +103,12 @@ final class ECDSA extends RSA
         $Rl = \mb_strlen($R, '8bit') / 2;
         $S = $this->preparePositiveInteger($S);
         $Sl = \mb_strlen($S, '8bit') / 2;
-        $der = \pack('H*',
+
+        return \hex2bin(
             '30' . ($Rl + $Sl + 4 > 128 ? '81' : '') . \dechex($Rl + $Sl + 4)
             . '02' . \dechex($Rl) . $R
             . '02' . \dechex($Sl) . $S
         );
-
-        return $der;
     }
 
     private function preparePositiveInteger(string $data): string
