@@ -35,11 +35,11 @@ final class HMAC implements SignatureInterface
 
     public function getPrivateKey(string $content, string $passphrase)
     {
-        return \hex2bin($content);
+        return $content;
     }
 
     public function getPublicKey(string $content)
     {
-        return \hex2bin($content);
+        return $content;
     }
 }

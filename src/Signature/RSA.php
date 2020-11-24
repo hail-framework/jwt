@@ -74,8 +74,16 @@ class RSA implements SignatureInterface
 
     public function getPublicKey(string $content)
     {
-        $key = \openssl_pkey_get_public($content);
-        $this->validateKey($key);
+        $key = \openssl_pkey_get_private($content);
+
+        if ($key === false) {
+            $key = \openssl_pkey_get_public($content);
+            $this->validateKey($key);
+        } else {
+            $key = \openssl_pkey_get_public(
+                $this->validateKey($key)['key']
+            );
+        }
 
         return $key;
     }
