@@ -31,7 +31,7 @@ class RSA implements SignatureInterface
 
     public function sign(string $payload, $key, string $hash): string
     {
-        if (!\is_resource($key)) {
+        if (!\is_resource($key) || !$key instanceof \OpenSSLAsymmetricKey) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
         }
 
@@ -47,7 +47,7 @@ class RSA implements SignatureInterface
 
     public function verify(string $signature, string $payload, $key, string $hash): bool
     {
-        if (!\is_resource($key)) {
+        if (!\is_resource($key) || !$key instanceof \OpenSSLAsymmetricKey) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
         }
 
@@ -90,7 +90,7 @@ class RSA implements SignatureInterface
 
     protected function validateKey($key)
     {
-        if (!\is_resource($key)) {
+        if (!\is_resource($key) || !$key instanceof \OpenSSLAsymmetricKey) {
             throw new \InvalidArgumentException(
                 'It was not possible to parse your key, reason: ' . \openssl_error_string()
             );

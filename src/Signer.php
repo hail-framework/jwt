@@ -47,6 +47,11 @@ final class Signer
      */
     private $signature;
 
+    /**
+     * @var array
+     */
+    private $cache = [];
+
     public function __construct(string $algorithm, ?string $key, string $passphrase = '')
     {
         $this->algorithm = self::supported($algorithm);
@@ -57,27 +62,38 @@ final class Signer
         }
     }
 
+    public function __destruct()
+    {
+        foreach ($this->cache as $key) {
+            if (\is_resource($key) || $key instanceof \OpenSSLAsymmetricKey) {
+                \openssl_free_key($key);
+            }
+        }
+    }
+
     public function setKey(string $key, string $passphrase = ''): void
     {
         $this->key = $key;
         $this->passphrase = $passphrase;
+        $this->cache = [];
     }
 
-    private function getKey($type)
+    private function getPrivateKey()
     {
         if (empty($this->key)) {
             throw new \LogicException('Key not set');
         }
 
-        if ($type === 'sign') {
-            return $this->signature->getPrivateKey($this->key, $this->passphrase);
+        return $this->cache['private'] ?? $this->cache['private'] = $this->signature->getPrivateKey($this->key, $this->passphrase);
+    }
+
+    private function getPublicKey()
+    {
+        if (empty($this->key)) {
+            throw new \LogicException('Key not set');
         }
 
-        if ($type === 'verify') {
-            return $this->signature->getPublicKey($this->key);
-        }
-
-        throw new \LogicException('unknown method');
+        return $this->cache['public'] ?? $this->cache['public'] = $this->signature->getPublicKey($this->key);
     }
 
     public static function supported($algorithm)
@@ -96,12 +112,16 @@ final class Signer
 
     public function sign(string $payload): string
     {
-        return $this->signature->sign($payload, $this->getKey(__FUNCTION__), $this->hash);
+        $key = $this->cache['private'] ?? $this->getPrivateKey();
+
+        return $this->signature->sign($payload, $key, $this->hash);
     }
 
     public function verify(string $signature, string $payload): bool
     {
-        return $this->signature->verify($signature, $payload, $this->getKey(__FUNCTION__), $this->hash);
+        $key = $this->cache['public'] ?? $this->getPublicKey();
+
+        return $this->signature->verify($signature, $payload, $key, $this->hash);
     }
 
     private function getSignature($algorithm)

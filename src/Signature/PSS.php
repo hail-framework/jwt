@@ -8,7 +8,7 @@ class PSS extends RSA
 {
     public function sign(string $payload, $key, string $hash): string
     {
-        if (!\is_resource($key)) {
+        if (!\is_resource($key) || !$key instanceof \OpenSSLAsymmetricKey) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
         }
 
@@ -42,7 +42,7 @@ class PSS extends RSA
 
     public function verify(string $signature, string $payload, $key, string $hash): bool
     {
-        if (!\is_resource($key)) {
+        if (!\is_resource($key) || !$key instanceof \OpenSSLAsymmetricKey) {
             throw new \InvalidArgumentException('Key is not a openssl key resource');
         }
 
